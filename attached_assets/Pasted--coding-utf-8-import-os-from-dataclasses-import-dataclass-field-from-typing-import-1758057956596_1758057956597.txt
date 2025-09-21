@@ -1,0 +1,668 @@
+# -*- coding: utf-8 -*-
+
+
+import os
+from dataclasses import dataclass, field
+from typing import List, Tuple, Optional, Dict, Any
+
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox
+from tkinter.scrolledtext import ScrolledText
+
+import pandas as pd
+from openpyxl import Workbook, load_workbook
+from openpyxl.utils import get_column_letter
+from openpyxl.styles import Alignment
+
+# ===================== DİL / ÇEVİRİ =====================
+T = {
+    "tr": {
+        "title": "Packingo",
+        "language": "Dil",
+        "select_file": "Excel Seç",
+        "length_unit": "Uzunluk Birimi",
+        "weight_unit": "Ağırlık Birimi",
+        "container_types": "Konteyner Tipleri",
+        "trailer_types": "Dorse Tipleri (en az 1 seç)",
+        "stackable_src": "İstiflenebilirlik",
+        "stack_excel": "Excel'den al",
+        "stack_yes": "Tümü istiflenebilir",
+        "stack_no": "Tümü istiflenemez",
+        "plan": "Planla",
+        "template": "Örnek Şablon Oluştur",
+        "ready": "Hazır. Excel seç, tipleri işaretle ve Planla.",
+        "must_select_file": "Lütfen giriş Excel dosyasını seçin.",
+        "must_select_trailer": "En az bir dorse tipi seçmelisiniz.",
+        "done": "Plan tamamlandı.",
+        "written_to": "Çıktı:",
+        "err": "Hata",
+        "ok": "Tamam",
+        "info": "Bilgi",
+        "footer": "Bu yazılım H. DUMAN BOZKURT tarafından geliştirilmiş ve ücretsiz olarak yayınlanmıştır.",
+        "units_len": ["mm", "cm", "m"],
+        "units_w": ["g", "kg", "ton"],
+        "must_select_vehicle": "En az bir dorse veya konteyner tipi seçmelisiniz.",
+        "placed": "Yerleşti",
+        "not_fit": "Sığmıyor",
+    },
+    "en": {
+        "title": "Packingo",
+        "language": "Language",
+        "select_file": "Select Excel",
+        "length_unit": "Length Unit",
+        "weight_unit": "Weight Unit",
+        "container_types": "Container Types",
+        "trailer_types": "Trailer Types (select ≥1)",
+        "stackable_src": "Stackability",
+        "stack_excel": "Use from Excel",
+        "stack_yes": "All stackable",
+        "stack_no": "All non-stackable",
+        "plan": "Plan",
+        "template": "Create Sample Template",
+        "ready": "Ready. Pick Excel, choose types, then Plan.",
+        "must_select_file": "Please select an input Excel file.",
+        "must_select_trailer": "Select at least one trailer type.",
+        "done": "Planning finished.",
+        "written_to": "Output:",
+        "err": "Error",
+        "ok": "OK",
+        "info": "Info",
+        "footer": "This software was developed and released for free by H. DUMAN BOZKURT.",
+        "units_len": ["mm", "cm", "m"],
+        "units_w": ["g", "kg", "ton"],
+        "must_select_vehicle": "You must select at least one trailer or container type.",
+        "placed": "Placed",
+        "not_fit": "Doesn't fit",
+    },
+    "de": {
+        "title": "Packingo",
+        "language": "Sprache",
+        "select_file": "Excel wählen",
+        "length_unit": "Längeneinheit",
+        "weight_unit": "Gewichtseinheit",
+        "container_types": "Containertypen",
+        "trailer_types": "Anhängerarten (min. 1 wählen)",
+        "stackable_src": "Stapelbarkeit",
+        "stack_excel": "Aus Excel",
+        "stack_yes": "Alle stapelbar",
+        "stack_no": "Alle nicht stapelbar",
+        "plan": "Planen",
+        "template": "Beispielvorlage erstellen",
+        "ready": "Bereit. Excel wählen, Typen markieren und Planen.",
+        "must_select_file": "Bitte eine Excel-Datei wählen.",
+        "must_select_trailer": "Mindestens einen Anhängertyp wählen.",
+        "done": "Planung abgeschlossen.",
+        "written_to": "Ausgabe:",
+        "err": "Fehler",
+        "ok": "OK",
+        "info": "Info",
+        "footer": "Diese Software wurde von H. DUMAN BOZKURT entwickelt und kostenlos veröffentlicht.",
+        "units_len": ["mm", "cm", "m"],
+        "units_w": ["g", "kg", "ton"],
+        "must_select_vehicle": "Sie müssen mindestens einen Anhänger- oder Containertyp auswählen.",
+        "placed": "Platziert",
+        "not_fit": "Passt nicht",
+
+    },
+}
+
+# ===================== BİRİM ÇARPANLARI =====================
+LEN_FACT = {"mm": 1, "cm": 10, "m": 1000}  # hepsini mm'ye çevirmek için çarpan
+W_FACT = {"g": 0.001, "kg": 1, "ton": 1000}  # hepsini kg'a çevirmek için çarpan
+
+# ===================== TİP LİSTELERİ (iç ölçüler mm) =====================
+# Konteynerler
+CONTAINERS: Dict[str, Dict[str, Any]] = {
+    "20' Dry (20DC / 20GP)": {"iL": 5898, "iW": 2352, "iH": 2393, "max_kg": 21700, "cost": 24000},
+    "40' Dry (40DC / 40GP)": {"iL": 12032, "iW": 2352, "iH": 2393, "max_kg": 26500, "cost": 36000},
+    "40' High Cube (40HC)": {"iL": 12032, "iW": 2352, "iH": 2698, "max_kg": 26500, "cost": 38000},
+    "45' High Cube (45HC)": {"iL": 13556, "iW": 2352, "iH": 2698, "max_kg": 30000, "cost": 44000},
+    "20' Open Top (20OT)": {"iL": 5898, "iW": 2352, "iH": 2393, "max_kg": 21700, "cost": 26000},
+    "40' Open Top (40OT)": {"iL": 12032, "iW": 2352, "iH": 2393, "max_kg": 26500, "cost": 40000},
+    "20' Flat Rack (20FR)": {"iL": 5980, "iW": 2440, "iH": 2400, "max_kg": 31000, "cost": 30000},
+    "40' Flat Rack (40FR)": {"iL": 12032, "iW": 2440, "iH": 2590, "max_kg": 45000, "cost": 50000},
+}
+
+# Dorseler
+TRAILERS: Dict[str, Dict[str, Any]] = {
+    "Tenteli": {"iL": 13560, "iW": 2460, "iH": 2700, "max_kg": 25500, "cost": 35000},
+    "Flatbed": {"iL": 14500, "iW": 3450, "iH": 3350, "max_kg": 27000, "cost": 40000},
+    "Lowbed": {"iL": 20000, "iW": 5700, "iH": 4200, "max_kg": 70000, "cost": 55000},  # örnek
+}
+
+DEFAULT_OUTPUT = "Plan.xlsx"
+
+# ===================== VERİ SINIFLARI =====================
+@dataclass
+class Load:
+    no: str
+    load_name: str
+    L: int
+    W: int
+    H: int
+    kg: float
+    stack: bool
+    vol: int = field(init=False)
+
+    def __post_init__(self):
+        self.vol = int(self.L) * int(self.W) * int(self.H)
+
+    def rots(self) -> List[Tuple[int, int, int]]:
+        L, W, H = self.L, self.W, self.H
+        return list({(L, W, H), (L, H, W), (W, L, H), (W, H, L), (H, L, W), (H, W, L)})
+
+@dataclass
+class Placement:
+    load_no: str
+    load_name: str
+    L: int; W: int; H: int; kg: float
+    x: int; y: int; z: int
+    rot: Tuple[int, int, int]
+
+@dataclass
+class Shelf:
+    z0: int
+    height: int
+    rows: List[Tuple[int, int, int]] = field(default_factory=list)  # (y_start, row_height, used_len)
+    places: List[Placement] = field(default_factory=list)
+    all_stackable: bool = True
+
+    def try_place(self, ld: Load, iL: int, iW: int, rot: Tuple[int, int, int]) -> Optional[Placement]:
+        L, W, H = rot
+        if H > self.height: return None
+        # satırlarda dene
+        for i,(y, rh, used) in enumerate(self.rows):
+            if W <= rh and used + L <= iL and y + rh <= iW:
+                p = Placement(ld.no, ld.load_name, L, W, H, ld.kg, used, y, self.z0, rot)
+                self.places.append(p)
+                self.rows[i] = (y, rh, used + L)
+                self.all_stackable = self.all_stackable and ld.stack
+                return p
+        # yeni satır
+        used_band = sum(rh for (_, rh, __) in self.rows)
+        if used_band + W <= iW and L <= iL:
+            p = Placement(ld.no, ld.load_name, L, W, H, ld.kg, 0, used_band, self.z0, rot)
+            self.places.append(p)
+            self.rows.append((used_band, W, L))
+            self.all_stackable = self.all_stackable and ld.stack
+            return p
+        return None
+
+@dataclass
+class Vehicle:
+    label: str       # örn "Tenteli #1"
+    type_name: str   # örn "Tenteli"
+    iL: int; iW: int; iH: int
+    max_kg: float
+    shelves: List[Shelf] = field(default_factory=list)
+    total_kg: float = 0.0
+
+    def ensure_shelf(self, h: int, is_lowbed: bool = False, load_name: str = "") -> Optional[Shelf]:
+        # For lowbed, don't stack loads - each load gets its own shelf
+        if is_lowbed:
+            # Check if we can add a new shelf for this load
+            used_h = sum(sh.height for sh in self.shelves)
+            remain = self.iH - used_h
+            if h <= remain:
+                sh = Shelf(used_h, h)
+                self.shelves.append(sh)
+                return sh
+            return None
+        
+        # Original logic for other vehicle types
+        for sh in self.shelves:
+            if h <= sh.height:
+                return sh
+        used_h = sum(sh.height for sh in self.shelves)
+        remain = self.iH - used_h
+        if h <= remain:
+            # üst raf açılacaksa alttakilerin stackable olması gerekir (basit kural)
+            if self.shelves and not all(sh.all_stackable for sh in self.shelves):
+                return None
+            sh = Shelf(used_h, h)
+            self.shelves.append(sh)
+            return sh
+        return None
+
+    def can_place_on_lowbed(self, ld: Load) -> bool:
+        """Check if load can be placed on lowbed based on load_name matching rules"""
+        if self.type_name != "Lowbed":
+            return True
+            
+        # If no loads placed yet, allow
+        if not self.shelves or not any(sh.places for sh in self.shelves):
+            return True
+            
+        # Get existing load names on this lowbed
+        existing_names = set()
+        for sh in self.shelves:
+            for place in sh.places:
+                existing_names.add(place.load_name)
+        
+        # Check if new load name matches existing ones (exact match or partial match)
+        for existing_name in existing_names:
+            if ld.load_name == existing_name:
+                return True
+            # Check for partial matching (if names share common words/parts)
+            if self.has_partial_match(ld.load_name, existing_name):
+                return True
+        
+        # If no matches found and there are existing loads, don't allow
+        return len(existing_names) == 0
+
+    def has_partial_match(self, name1: str, name2: str) -> bool:
+        """Check if two load names have partial matching"""
+        # Convert to lowercase for comparison
+        name1_words = set(name1.lower().split())
+        name2_words = set(name2.lower().split())
+        
+        # If they share at least one word, consider it a partial match
+        return len(name1_words.intersection(name2_words)) > 0
+
+    def try_put(self, ld: Load) -> Optional[Placement]:
+        if self.total_kg + ld.kg > self.max_kg:
+            return None
+            
+        # Special handling for lowbed - check load name compatibility
+        if self.type_name == "Lowbed" and not self.can_place_on_lowbed(ld):
+            return None
+            
+        rots = sorted(ld.rots(), key=lambda r:(r[2], -r[0]*r[1]))  # önce alçak
+        is_lowbed = self.type_name == "Lowbed"
+        
+        for rot in rots:
+            L,W,H = rot
+            if L>self.iL or W>self.iW or H>self.iH: continue
+            
+            # For lowbed, skip existing shelves and create new one
+            if not is_lowbed:
+                for sh in self.shelves:
+                    p = sh.try_place(ld, self.iL, self.iW, rot)
+                    if p:
+                        self.total_kg += ld.kg
+                        return p
+            
+            sh = self.ensure_shelf(H, is_lowbed, ld.load_name)
+            if sh:
+                p = sh.try_place(ld, self.iL, self.iW, rot)
+                if p:
+                    self.total_kg += ld.kg
+                    return p
+        return None
+
+# ===================== ÇEKİRDEK İŞLEVLER =====================
+def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    # normalize headers to simple lowercase underscored form
+    df.columns = [str(c).strip().lower().replace(" ", "_") for c in df.columns]
+
+    rename_map = {}
+    for c in df.columns:
+        # 1) yük numarası (yuk_no)
+        if ("yuk" in c or "yük" in c) and ("no" in c or c.endswith("_no") or c == "yuk"):
+            rename_map[c] = "yuk_no"
+            continue
+        # 2) yük adı / load name
+        if (("yuk" in c or "yük" in c) and ("adi" in c or c.endswith("_adi") or "ad" in c)):
+            rename_map[c] = "load_name"
+            continue
+        if "load" in c and "name" in c:
+            rename_map[c] = "load_name"
+            continue
+        if c == "name":
+            rename_map[c] = "load_name"
+            continue
+        # ölçüler ve ağırlık
+        if c.startswith("uzun"): rename_map[c] = "uzunluk_mm"
+        if c.startswith("genis") or c.startswith("geniş"): rename_map[c] = "genislik_mm"
+        if c.startswith("yuksek") or c.startswith("yüksek"): rename_map[c] = "yukseklik_mm"
+        if c.startswith("agir") or c.startswith("ağı"): rename_map[c] = "agirlik_kg"
+        # istiflenebilirlik
+        if c.startswith("istif"): rename_map[c] = "istiflenebilir"
+
+    df = df.rename(columns=rename_map)
+
+    # İç isimlendirmede read_loads() 'load_name' ve 'yuk_no' bekler, bu yüzden bunları zorunlu kılıyoruz
+    req = ["yuk_no", "load_name", "uzunluk_mm", "genislik_mm", "yukseklik_mm", "agirlik_kg"]
+    missing = [r for r in req if r not in df.columns]
+    if missing:
+        raise ValueError(f"Gerekli sütun(lar) eksik: {', '.join(missing)}")
+    return df
+
+
+def read_loads(path: str, len_unit: str, w_unit: str, stack_mode: str, lang="tr") -> List[Load]:
+    df = pd.read_excel(path)
+    df = normalize_columns(df)
+    # birim dönüşümü -> mm ve kg
+    lf = LEN_FACT[len_unit]
+    wf = W_FACT[w_unit]
+    # Eğer gelen birim seçilen birimse, mm'ye çevirmek için çarp (örn cm seçtiyse *10)
+    Lmm = (df["uzunluk_mm"] * lf).astype(int)
+    Wmm = (df["genislik_mm"] * lf).astype(int)
+    Hmm = (df["yukseklik_mm"] * lf).astype(int)
+    KG  = (df["agirlik_kg"] * wf).astype(float)
+
+    # istiflenebilirlik
+    if stack_mode == "excel":
+        if "istiflenebilir" in df.columns:
+            def to_bool(v):
+                s = str(v).strip().lower()
+                return s in {"1","true","evet","yes","ja"}
+            stacks = df["istiflenebilir"].map(to_bool).fillna(True)
+        else:
+            stacks = pd.Series([True]*len(df))
+    elif stack_mode == "yes":
+        stacks = pd.Series([True]*len(df))
+    else:
+        stacks = pd.Series([False]*len(df))
+
+    loads: List[Load] = []
+    for i in range(len(df)):
+        loads.append(Load(
+            no=str(df["yuk_no"].iloc[i]),
+            load_name=str(df["load_name"].iloc[i]),
+            L=int(Lmm.iloc[i]),
+            W=int(Wmm.iloc[i]),
+            H=int(Hmm.iloc[i]),
+            kg=float(KG.iloc[i]),
+            stack=bool(stacks.iloc[i]),
+        ))
+    
+    # Group loads by load_name for better lowbed planning
+    loads.sort(key=lambda ld: (ld.load_name, 0 if ld.stack else 1, ld.vol), reverse=True)
+    return loads
+
+def plan(loads: List[Load], selected_trailers: List[str], selected_conts: List[str]):
+    """Return (vehicles, unplaced_loads)"""
+    vehicles: List[Vehicle] = []
+    unplaced: List[Load] = []
+
+    # Öncelik sırası tanımı
+    trailer_priority = ["Tenteli", "Flatbed", "Lowbed"]
+    selected_trailers_sorted = [t for t in trailer_priority if t in selected_trailers]
+
+    def make_vehicle(type_name: str, idx: int, meta: Dict[str, Any]) -> Vehicle:
+        return Vehicle(
+            label=f"{type_name} #{idx}",
+            type_name=type_name,
+            iL=meta["iL"], iW=meta["iW"], iH=meta["iH"],
+            max_kg=float(meta["max_kg"])
+        )
+
+    # Kullanılabilir araç tipleri (önce dorseler, sonra konteynerler)
+    avail: List[Tuple[str, Dict[str, Any]]] = []
+    for name in selected_trailers_sorted:
+        avail.append((name, TRAILERS[name]))
+    for name in selected_conts:
+        avail.append((name, CONTAINERS[name]))
+
+    counters: Dict[str, int] = {}
+
+    for ld in loads:
+        placed = False
+
+        # 1. Araç tipi önceliğine göre sırayla ilerle
+        for name, meta in avail:
+            # 2. Önce mevcut araçlarda dene
+            for v in vehicles:
+                if v.type_name != name:
+                    continue
+                p = v.try_put(ld)
+                if p:
+                    placed = True
+                    break
+            if placed:
+                break
+
+            # 3. Eğer mevcut araçlarda sığmadıysa yeni araç oluştur ve dene
+            fits = any(
+                L <= meta["iL"] and W <= meta["iW"] and H <= meta["iH"]
+                for (L, W, H) in ld.rots()
+            )
+            if not fits:
+                continue
+
+            counters[name] = counters.get(name, 0) + 1
+            new_vehicle = make_vehicle(name, counters[name], meta)
+            p = new_vehicle.try_put(ld)
+            if p:
+                vehicles.append(new_vehicle)
+                placed = True
+                break
+
+        # 4. Hiçbir araca sığmazsa, unplaced listesine ekle
+        if not placed:
+            # print(f"UYARI: '{ld.no}' numaralı yük ('{ld.load_name}') hiçbir araca yerleştirilemedi.")
+            unplaced.append(ld)
+
+    return vehicles, unplaced
+
+
+def export_grouped_excel(vehicles: List[Vehicle], out_path: str, lang="tr", unplaced: Optional[List[Load]] = None):
+    # Gruplu tabloyu yaz: her araç için ardışık satırlar, tip sütunu merge, arada bir boş satır
+    headers = ["yuk_no","yuk_adi","uzunluk_mm","genislik_mm","yukseklik_mm","agirlik_kg","dorse_konteyner_tipi","vehicle_id","x_mm","y_mm","z_mm","status"]
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Plan"
+    ws.append(headers)
+
+    current_row = 2
+    merge_ranges = []  # (start_row, end_row, col_idx)
+    for v in vehicles:
+        # placements topla
+        pls: List[Placement] = []
+        for sh in v.shelves:
+            pls.extend(sh.places)
+        pls.sort(key=lambda p:(p.z,p.y,p.x))
+        if not pls:
+            continue
+        start = current_row
+        for p in pls:
+            status = T.get(lang, T['tr'])['placed']
+            ws.append([p.load_no, p.load_name, p.L, p.W, p.H, p.kg, v.type_name, v.label, p.x, p.y, p.z, status])
+            current_row += 1
+        end = current_row-1
+        # tip sütunu (7. sütun) merge
+        merge_ranges.append((start, end, 7))
+        # grup arası boş satır
+        current_row += 1
+        ws.append([""]*len(headers))
+
+    # Eğer sığmayan yükler varsa, ayrı bir bölüm halinde yaz
+    if unplaced:
+        # Başlık ayırıcı
+        current_row += 1
+        ws.append([""]*len(headers))
+        ws.append(["UNPLACED / Sığmayan YÜKLER"] + [""]*(len(headers)-1))
+        current_row += 2
+        for ld in unplaced:
+            status = T.get(lang, T['tr'])['not_fit']
+            ws.append([ld.no, ld.load_name, ld.L, ld.W, ld.H, ld.kg, "-", "-", "-", "-", "-", status])
+            current_row += 1
+
+    # Sütun genişlikleri + başlık hizalama
+    for i,col in enumerate(headers, start=1):
+        ws.column_dimensions[get_column_letter(i)].width = 18
+    for cell in ws[1]:
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    # Merge işlemleri
+    for (s,e,c) in merge_ranges:
+        if e > s:
+            ws.merge_cells(start_row=s, start_column=c, end_row=e, end_column=c)
+            ws.cell(row=s, column=c).alignment = Alignment(horizontal="center", vertical="center")
+
+    wb.save(out_path)
+
+
+def create_template(path: str):
+    # örnek veri with load_name column
+    data = [
+        {"yuk_no": 1, "yuk_adi": "Engine_Block_A", "uzunluk_mm": 3202, "genislik_mm": 300, "yukseklik_mm": 200, "agirlik_kg": 17800, "istiflenebilir": 1},
+        {"yuk_no": 144, "yuk_adi": "Engine_Block_A", "uzunluk_mm": 1050, "genislik_mm": 216, "yukseklik_mm": 168, "agirlik_kg": 8130, "istiflenebilir": 1},
+        {"yuk_no": 475, "yuk_adi": "Small_Parts_B", "uzunluk_mm": 41, "genislik_mm": 33, "yukseklik_mm": 30, "agirlik_kg": 39, "istiflenebilir": 1},
+        {"yuk_no": 479, "yuk_adi": "Small_Parts_B", "uzunluk_mm": 41, "genislik_mm": 33, "yukseklik_mm": 30, "agirlik_kg": 27, "istiflenebilir": 1},
+        {"yuk_no": 2, "yuk_adi": "Heavy_Equipment_C", "uzunluk_mm": 3202, "genislik_mm": 300, "yukseklik_mm": 200, "agirlik_kg": 14410, "istiflenebilir": 0},
+        {"yuk_no": 3, "yuk_adi": "Machine_Parts_D", "uzunluk_mm": 1994, "genislik_mm": 210, "yukseklik_mm": 140, "agirlik_kg": 9600, "istiflenebilir": 0},
+    ]
+    pd.DataFrame(data).to_excel(path, index=False)
+
+# ===================== TKINTER UYGULAMASI =====================
+class App(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.lang = "tr"
+        self.t = T[self.lang]
+        self.iconbitmap("logo.ico")
+        self.geometry("900x630")
+        self.title(self.t["title"])
+        self.resizable(False, False)
+
+        self.input_path = tk.StringVar()
+        self.out_path = tk.StringVar(value=DEFAULT_OUTPUT)
+        self.len_unit = tk.StringVar(value=self.t["units_len"][0])  # mm
+        self.w_unit = tk.StringVar(value=self.t["units_w"][1])      # kg
+        self.stack_mode = tk.StringVar(value="excel")  # excel / yes / no
+
+        self.container_vars: Dict[str, tk.BooleanVar] = {k: tk.BooleanVar(value=False) for k in CONTAINERS.keys()}
+        self.trailer_vars: Dict[str, tk.BooleanVar] = {k: tk.BooleanVar(value=False) for k in TRAILERS.keys()}
+
+        self.build()
+
+    def tr(self, key): return self.t.get(key, key)
+
+    def build(self):
+        pad = {"padx": 10, "pady": 6}
+
+        # Dil / dosya
+        frm_top = ttk.LabelFrame(self, text=self.tr("info"))
+        frm_top.pack(fill="x", **pad)
+
+        # Dil
+        ttk.Label(frm_top, text=self.tr("language")).grid(row=0, column=0, sticky="w")
+        cmb_lang = ttk.Combobox(frm_top, values=list(T.keys()), state="readonly", width=8)
+        cmb_lang.set(self.lang)
+        cmb_lang.grid(row=0, column=1, sticky="w")
+        cmb_lang.bind("<<ComboboxSelected>>", lambda e: self.set_language(cmb_lang.get()))
+
+        # Girdi/Çıktı
+        ttk.Button(frm_top, text=self.tr("select_file"), command=self.pick_file).grid(row=0, column=2, padx=10)
+        ttk.Entry(frm_top, textvariable=self.input_path, width=55).grid(row=0, column=3, sticky="we")
+        ttk.Button(frm_top, text=self.tr("template"), command=self.make_template).grid(row=0, column=4, padx=10)
+
+        ttk.Label(frm_top, text="Output").grid(row=1, column=2, sticky="e")
+        ttk.Entry(frm_top, textvariable=self.out_path, width=55).grid(row=1, column=3, sticky="we")
+        ttk.Button(frm_top, text="...", command=self.pick_output).grid(row=1, column=4, sticky="w")
+
+        # Birimler
+        frm_units = ttk.LabelFrame(self, text="Units")
+        frm_units.pack(fill="x", **pad)
+        ttk.Label(frm_units, text=self.tr("length_unit")).grid(row=0, column=0, sticky="w")
+        ttk.Combobox(frm_units, values=self.t["units_len"], textvariable=self.len_unit, state="readonly", width=6)\
+            .grid(row=0, column=1, sticky="w", padx=8)
+        ttk.Label(frm_units, text=self.tr("weight_unit")).grid(row=0, column=2, sticky="w")
+        ttk.Combobox(frm_units, values=self.t["units_w"], textvariable=self.w_unit, state="readonly", width=6)\
+            .grid(row=0, column=3, sticky="w", padx=8)
+
+        # Stackability
+        frm_stack = ttk.LabelFrame(self, text=self.tr("stackable_src"))
+        frm_stack.pack(fill="x", **pad)
+        ttk.Radiobutton(frm_stack, text=self.tr("stack_excel"), variable=self.stack_mode, value="excel").grid(row=0, column=0, sticky="w")
+        ttk.Radiobutton(frm_stack, text=self.tr("stack_yes"), variable=self.stack_mode, value="yes").grid(row=0, column=1, sticky="w", padx=8)
+        ttk.Radiobutton(frm_stack, text=self.tr("stack_no"), variable=self.stack_mode, value="no").grid(row=0, column=2, sticky="w", padx=8)
+
+        # Tip seçimleri
+        frm_types = ttk.Frame(self)
+        frm_types.pack(fill="x", **pad)
+
+        frm_cont = ttk.LabelFrame(frm_types, text=self.tr("container_types"))
+        frm_cont.grid(row=0, column=0, sticky="nsew", padx=10)
+        for i,k in enumerate(CONTAINERS.keys()):
+            ttk.Checkbutton(frm_cont, text=k, variable=self.container_vars[k]).grid(row=i, column=0, sticky="w")
+
+        frm_tr = ttk.LabelFrame(frm_types, text=self.tr("trailer_types"))
+        frm_tr.grid(row=0, column=1, sticky="nsew", padx=10)
+        for i,k in enumerate(TRAILERS.keys()):
+            ttk.Checkbutton(frm_tr, text=k, variable=self.trailer_vars[k]).grid(row=i, column=0, sticky="w")
+
+        # İşlem ve log
+        frm_bottom = ttk.LabelFrame(self, text="Run")
+        frm_bottom.pack(fill="both", expand=True, **pad)
+        ttk.Button(frm_bottom, text=self.tr("plan"), command=self.on_plan).pack(anchor="w", padx=10, pady=6)
+        self.logbox = ScrolledText(frm_bottom, height=12)
+        self.logbox.pack(fill="both", expand=True, padx=8, pady=6)
+        self.log(self.tr("ready"))
+
+        # Footer
+        ttk.Label(self, text=self.tr("footer")).pack(side="bottom", pady=5)
+
+    def set_language(self, lang):
+        self.lang = lang
+        self.t = T[self.lang]
+        for w in self.winfo_children(): w.destroy()
+        self.build()
+
+    def log(self, msg):
+        self.logbox.insert("end", msg + "\n")
+        self.logbox.see("end")
+        self.update_idletasks()
+
+    def pick_file(self):
+        p = filedialog.askopenfilename(title=self.tr("select_file"), filetypes=[("Excel","*.xlsx;*.xls")])
+        if p:
+            self.input_path.set(p)
+            self.out_path.set(os.path.join(os.path.dirname(p), DEFAULT_OUTPUT))
+
+    def pick_output(self):
+        p = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel","*.xlsx")])
+        if p:
+            self.out_path.set(p)
+
+    def make_template(self):
+        p = filedialog.asksaveasfilename(defaultextension=".xlsx", initialfile="ornek_sablon.xlsx", filetypes=[("Excel","*.xlsx")])
+        if not p: return
+        try:
+            create_template(p)
+            messagebox.showinfo(self.tr("info"), f"{self.tr('template')} -> {p}")
+        except Exception as e:
+            messagebox.showerror(self.tr("err"), str(e))
+
+    def on_plan(self):
+        in_path = self.input_path.get().strip()
+        out_path = self.out_path.get().strip() or DEFAULT_OUTPUT
+        if not in_path:
+            messagebox.showerror(self.tr("err"), self.tr("must_select_file"))
+            return
+
+        # ✅ Kullanıcı en az bir dorse veya konteyner seçmeli
+        selected_tr = [k for k,v in self.trailer_vars.items() if v.get()]
+        selected_ct = [k for k,v in self.container_vars.items() if v.get()]
+        if not (selected_tr or selected_ct):
+            messagebox.showerror(self.tr("err"), self.tr("must_select_vehicle"))
+            return
+
+        try:
+            loads = read_loads(
+                in_path,
+                self.len_unit.get(),
+                self.w_unit.get(),
+                {"excel":"excel","yes":"yes","no":"no"}[self.stack_mode.get()]
+            )
+        except Exception as e:
+            messagebox.showerror(self.tr("err"), str(e)); return
+
+        self.log("Planlama başlıyor...")
+        vehicles, unplaced = plan(loads, selected_tr, selected_ct)
+        export_grouped_excel(vehicles, out_path, self.lang, unplaced=unplaced)
+        # Log sığmayanları da göster
+        if unplaced:
+            for ld in unplaced:
+                self.log(f"{ld.no} - {ld.load_name}: {self.tr('not_fit')}")
+        self.log(self.tr("done"))
+        self.log(f"{self.tr('written_to')} {out_path}")
+        messagebox.showinfo(self.tr("ok"), f"{self.tr('done')}\n{self.tr('written_to')} {out_path}")
+
+if __name__ == "__main__":
+    App().mainloop()
+
+

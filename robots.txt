@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Allow all search engines to access all content
+# No restrictions on crawling
+
+Sitemap: https://packingo.net/sitemap.xml
+
+# Optional: Common crawl delay (if needed)
+# Crawl-delay: 1

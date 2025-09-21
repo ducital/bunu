@@ -1,0 +1,492 @@
+/* Packingo - 3D Container Loading Optimization System */
+
+/* Orange Theme */
+
+/* Form Styling */
+.form-control, .form-select {
+    background: white;
+    border: 1px solid #e5e5e7;
+    color: #2c2c2c;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    background: white;
+    border-color: #FF8C00;
+    color: #2c2c2c;
+    box-shadow: 0 0 0 0.25rem rgba(255, 140, 0, 0.25);
+}
+
+.form-check-input {
+    background-color: white;
+    border: 1px solid #e5e5e7;
+}
+
+.form-check-input:checked {
+    background-color: #FF8C00;
+    border-color: #FF8C00;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+/* Orange Theme Colors */
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #f8f9fc 0%, #fff5e6 100%);
+    color: #2c2c2c;
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+.card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(255,140,0,0.08);
+    background: white;
+    color: #2c2c2c;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255,140,0,0.12);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #FF8C00, #FF7700);
+    color: white;
+    border-radius: 16px 16px 0 0 !important;
+    border: none;
+    padding: 1.5rem;
+    font-weight: 600;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="cubes" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><rect fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5" x="0" y="0" width="20" height="20"/></pattern></defs><rect fill="url(%23cubes)" width="100" height="100"/></svg>');
+    opacity: 0.3;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #FF8C00, #FF7700);
+    border: none;
+    border-radius: 12px;
+    padding: 14px 28px;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-primary:hover::before {
+    left: 100%;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #FF7700, #FFB84D);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255,140,0,0.3);
+    color: white;
+}
+
+.btn-outline-primary {
+    border: 2px solid #FF8C00;
+    color: #FF8C00;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover {
+    background: #FF8C00;
+    border-color: #FF8C00;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255,140,0,0.25);
+}
+
+/* Duplicate rule removed - using earlier definition with dark mode support */
+
+/* Focus styles handled in earlier definition */
+
+.form-check-input:checked {
+    background-color: #FF8C00;
+    border-color: #FF8C00;
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 0.2rem rgba(255,140,0,0.25);
+}
+
+.form-check-label {
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.form-check-input:checked + .form-check-label {
+    color: #FF8C00;
+    font-weight: 500;
+}
+
+header {
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 4px 20px rgba(255,140,0,0.1);
+    background: white;
+    position: relative;
+    transition: background 0.3s ease;
+}
+
+.section-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #2c2c2c;
+    margin-bottom: 1.5rem;
+    border-bottom: 3px solid #FF8C00;
+    padding-bottom: 0.75rem;
+    position: relative;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: #FF7700;
+}
+
+.subsection-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2c2c2c;
+    margin-bottom: 1rem;
+    margin-top: 2rem;
+    position: relative;
+    padding-left: 1rem;
+}
+
+.subsection-title::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 20px;
+    background: linear-gradient(135deg, #FF8C00, #FF7700);
+    border-radius: 2px;
+}
+
+.clean-section {
+    background: white;
+    border: 1px solid #e5e5e7;
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.clean-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #FF8C00, #FF7700);
+}
+
+.clean-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255,140,0,0.12);
+}
+
+.dropdown-menu {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 8px 25px rgba(255,140,0,0.15);
+    padding: 0.5rem 0;
+}
+
+.dropdown-item {
+    padding: 0.75rem 1.5rem;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    margin: 0 0.5rem;
+}
+
+.dropdown-item:hover {
+    background: rgba(255,140,0,0.1);
+    color: #FF8C00;
+}
+
+.dropdown-item.active {
+    background: linear-gradient(135deg, #FF8C00, #FF7700);
+    color: white;
+}
+
+/* Dropdown Menu Support */
+.dropdown-menu {
+    background: white;
+    color: #2c2c2c;
+    border: 1px solid #e5e5e7;
+}
+
+.dropdown-item {
+    color: #2c2c2c;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background: rgba(255,140,0,0.1);
+    color: #2c2c2c;
+}
+
+.dropdown-item.active {
+    background: #FF8C00;
+    color: white;
+}
+
+footer {
+    border-radius: 20px 20px 0 0;
+    background: linear-gradient(135deg, rgba(255,140,0,0.05), rgba(255,119,0,0.05));
+    border-top: 1px solid #e5e5e7;
+    color: #2c2c2c;
+}
+
+/* Loading animation */
+.loading {
+    display: none;
+}
+
+.loading.show {
+    display: inline-block;
+}
+
+/* File upload styling */
+.form-control[type="file"] {
+    padding: 12px 16px;
+    border: 2px dashed #FF8C00;
+    background: rgba(255,140,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.form-control[type="file"]:hover {
+    border-color: #FF7700;
+    background: rgba(255,140,0,0.08);
+}
+
+/* Vehicle specs styling */
+.form-check-label small {
+    font-size: 0.85em;
+    line-height: 1.4;
+    color: #6c757d;
+    transition: color 0.2s ease;
+}
+
+.form-check-input:checked + .form-check-label small {
+    color: #FF8C00;
+}
+
+/* Results section */
+.results-section {
+    margin-top: 2rem;
+    padding: 2rem;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(255,140,0,0.08);
+    border-top: 4px solid #FF8C00;
+}
+
+.vehicle-summary {
+    background: linear-gradient(135deg, rgba(255,140,0,0.05), rgba(255,119,0,0.05));
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-left: 4px solid #FF8C00;
+}
+
+.placement-table {
+    font-size: 0.9em;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.placement-table th {
+    background: linear-gradient(135deg, #FF8C00, #FF7700);
+    color: white;
+    border: none;
+    padding: 15px 12px;
+    font-weight: 600;
+}
+
+.placement-table td {
+    border: none;
+    padding: 12px;
+    border-bottom: 1px solid rgba(255,140,0,0.1);
+    transition: background-color 0.2s ease;
+}
+
+.placement-table tr:hover td {
+    background-color: rgba(255,140,0,0.1);
+}
+
+/* Creative enhancements */
+.logo-glow {
+    filter: drop-shadow(0 0 15px rgba(255,140,0,0.4));
+    transition: all 0.3s ease;
+}
+
+.logo-glow:hover {
+    filter: drop-shadow(0 0 20px rgba(255,140,0,0.6));
+    transform: scale(1.05);
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.clean-section {
+    animation: fadeInUp 0.6s ease forwards;
+}
+
+.clean-section:nth-child(1) { animation-delay: 0.1s; }
+.clean-section:nth-child(2) { animation-delay: 0.2s; }
+.clean-section:nth-child(3) { animation-delay: 0.3s; }
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 0 15px;
+    }
+    
+    header {
+        text-align: center;
+    }
+    
+    .logo-glow {
+        height: 100px !important;
+    }
+    
+    .col-lg-4 .clean-section {
+        margin-top: 1rem;
+    }
+    
+    .placement-table {
+        font-size: 0.8em;
+    }
+    
+    .section-title {
+        font-size: 1.2rem;
+    }
+    
+    .subsection-title {
+        font-size: 1.1rem;
+    }
+    
+    .clean-section {
+        padding: 1.5rem;
+    }
+    
+}
+
+/* Tutorial Modal Styling */
+.upload-demo {
+    border: 2px dashed #FF8C00 !important;
+    background: rgba(255,140,0,0.05);
+    transition: all 0.3s ease;
+}
+
+.upload-demo:hover {
+    border-color: #FF7700 !important;
+    background: rgba(255,140,0,0.1);
+}
+
+.nav-pills .nav-link {
+    border-radius: 25px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.nav-pills .nav-link.active {
+    background: linear-gradient(135deg, #FF8C00, #FF7700);
+    border-color: #FF8C00;
+}
+
+.nav-pills .nav-link:not(.active) {
+    color: #6c757d;
+    border-color: #e5e5e7;
+}
+
+.nav-pills .nav-link:not(.active):hover {
+    background: rgba(255,140,0,0.1);
+    color: #FF8C00;
+    border-color: #FF8C00;
+}
+
+.table-success {
+    background-color: rgba(25, 135, 84, 0.1) !important;
+}
+
+.table-warning {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
+.table-info {
+    background-color: rgba(13, 202, 240, 0.1) !important;
+}
+
+/* Progress indicators */
+.progress-step {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #e5e5e7;
+    margin: 0 4px;
+    transition: all 0.3s ease;
+}
+
+.progress-step.active {
+    background: #FF8C00;
+    transform: scale(1.2);
+}
+
+.progress-step.completed {
+    background: #FF7700;
+}

@@ -1,0 +1,22 @@
+yuk no yuk adi uzunluk_mm genislik_mm
+
+IZM020  |skid | = 400 [ = 250 |
+GIM108  jonwood | 490 [ = 260 |
+GIMO18  fonwood | = 600 [ = 300 |
+GIMO19  jonwood | = 600 [ = 300 |
+GIMO20  jonwood | = 600 [ = 300 |
+GIMO21 ~ jonwood | = 600 [ = 300 |
+GIM141 jonwood | 900 [ = 270 |
+GIM148  fonwood | = 900 | 270 |
+GIMI39 jonwood | 900 [ = 270 |
+GIM145  jonwood | 900 [ = 270 |
+GIM146  lonwood | 90 [ = 270 |
+GIM144 fonwood | = 900 [ = 270 |
+GIMO87  fonwood | 900 | = 250 |
+IZM016  funpacked | = 490 [ = 330 |
+IZM017  junpacked | = 400 | = 330 |
+IZM018  |unpacked | = 400 [ = 330 |
+IzM028  |skid | 400 [ = 305 |
+GIM140 jonwood | 900 [ = 270 |
+GIMOO3  jonwood | = 600 [ = 490 |
+GIMO27  fonwood | 460 [ = 435 |

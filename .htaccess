@@ -1,0 +1,50 @@
+# Packingo - 3D Container Loading Optimization System
+RewriteEngine On
+
+# Redirect to index.php if file doesn't exist  
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_URI} !^/(index\.php|process\.php|assets/|temp/|vendor/|composer\.json|composer\.lock)
+RewriteRule ^(.*)$ index.php [L]
+
+# Security Settings
+Options -Indexes
+ServerSignature Off
+
+# Protect sensitive files
+<FilesMatch "^(composer\.(json|lock)|\.env|\.git.*|\.htaccess|replit\.md)$">
+    Require all denied
+</FilesMatch>
+
+# Protect vendor directory
+<IfModule mod_rewrite.c>
+    RewriteRule ^vendor/(.*)$ - [F,L]
+</IfModule>
+
+# Prevent execution of PHP files in uploads
+<Directory "uploads">
+    <FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|sh|cgi)$">
+        Require all denied
+    </FilesMatch>
+</Directory>
+
+# Set proper MIME types
+<IfModule mod_mime.c>
+    AddType application/vnd.ms-excel .xls
+    AddType application/vnd.openxmlformats-officedocument.spreadsheetml.sheet .xlsx
+</IfModule>
+
+# Cache static assets
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/jpg "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+</IfModule>
+
+# Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain text/html text/xml text/css application/xml application/xhtml+xml application/rss+xml application/javascript application/x-javascript
+</IfModule>
